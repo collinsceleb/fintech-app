@@ -1,10 +1,11 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+  UpdateDateColumn
+} from "typeorm";
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
 import * as argon2 from 'argon2';
@@ -35,6 +36,15 @@ export class User {
   @Column({ name: 'last_name' })
   lastName: string;
 
+  @ApiProperty({ example: 0 })
+  @Column({ name: 'tries', nullable: false, default: 0 })
+  @Check('tries >= 0')
+  failedAttempts: number;
+
+  @ApiProperty({ example: false })
+  @Column({ name: 'is_locked', default: false })
+  isLocked: boolean;
+
   @ApiProperty({ example: '2023-05-01T00:00:00.000Z' })
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -42,6 +52,10 @@ export class User {
   @ApiProperty({ example: '2023-05-01T00:00:00.000Z' })
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @ApiProperty({ example: '2023-05-01T00:00:00.000Z' })
+  @Column({ name: 'last_login', nullable: true })
+  lastLogin: Date;
 
   async hashPassword(): Promise<void> {
     this.password = await argon2.hash(this.password);

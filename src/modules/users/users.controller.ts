@@ -9,11 +9,15 @@ import {
   UseInterceptors,
   ClassSerializerInterceptor,
   SerializeOptions,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
+import { ApiOkResponse } from '@nestjs/swagger';
+import { TokenResponse } from '../../common/class/token-response/token-response';
+import { CreateAuthDto } from './dto/create-auth.dto';
 
 @Controller('users')
 export class UsersController {
@@ -26,6 +30,16 @@ export class UsersController {
   })
   async register(@Body() createUserDto: CreateUserDto): Promise<User> {
     return await this.usersService.register(createUserDto);
+  }
+
+  @Post('login')
+  @ApiOkResponse({
+    type: TokenResponse,
+    description: 'Login successful',
+    schema: { example: TokenResponse },
+  })
+  async login(@Body() createAuthDto: CreateAuthDto): Promise<TokenResponse> {
+    return await this.usersService.login(createAuthDto);
   }
 
   @Get()
