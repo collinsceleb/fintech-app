@@ -3,6 +3,8 @@ import { SharedModule } from './common/shared/shared.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './modules/users/users.module';
+import { AccountsModule } from './modules/accounts/accounts.module';
+import { TransactionsModule } from './modules/transactions/transactions.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { UsersModule } from './modules/users/users.module';
     }),
     SharedModule,
     UsersModule,
+    AccountsModule,
+    TransactionsModule,
   ],
   controllers: [],
   providers: [],

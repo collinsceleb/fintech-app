@@ -3,12 +3,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  OneToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn
-} from "typeorm";
+  UpdateDateColumn,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
 import * as argon2 from 'argon2';
+import { Account } from '../../accounts/entities/account.entity';
 
 @Entity('users')
 export class User {
@@ -56,6 +59,13 @@ export class User {
   @ApiProperty({ example: '2023-05-01T00:00:00.000Z' })
   @Column({ name: 'last_login', nullable: true })
   lastLogin: Date;
+
+  @OneToOne(() => Account, (account) => account.user, {
+    cascade: true,
+    eager: true,
+  })
+  @JoinColumn({ name: 'account_id' })
+  account: Account;
 
   async hashPassword(): Promise<void> {
     this.password = await argon2.hash(this.password);

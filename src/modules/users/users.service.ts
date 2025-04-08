@@ -14,8 +14,9 @@ import { ConfigService } from '@nestjs/config';
 import { TokenResponse } from '../../common/class/token-response/token-response';
 import { JwtPayload } from '../../common/class/jwt-payload/jwt-payload';
 import { JwtService } from '@nestjs/jwt';
-import { request } from 'express';
 import { isEmail } from 'class-validator';
+import { AccountsService } from '../accounts/accounts.service';
+import { Account } from '../accounts/entities/account.entity';
 
 @Injectable()
 export class UsersService {
@@ -31,6 +32,7 @@ export class UsersService {
     private usersRepository: Repository<User>,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly accountsService: AccountsService,
   ) {}
 
   async checkUserExist(email: string) {
@@ -48,14 +50,19 @@ export class UsersService {
     try {
       const { email, password, firstName, lastName } = createUserDto;
       await this.checkUserExist(email);
-      const user = this.usersRepository.create({
+      const newUser = this.usersRepository.create({
         email,
         password,
         firstName,
         lastName,
       });
-      await user.hashPassword();
-      await this.usersRepository.save(user);
+      await newUser.hashPassword();
+      await this.usersRepository.save(newUser);
+      await this.accountsService.createAccount(newUser);
+      const user = await this.usersRepository.findOne({
+        where: { id: newUser.id },
+        relations: ['account'],
+      });
       return user;
     } catch (error) {
       console.error('Error registering user', error);
@@ -128,9 +135,7 @@ export class UsersService {
     }
   }
 
-  async login(
-    createAuthDto: CreateAuthDto,
-  ): Promise<TokenResponse> {
+  async login(createAuthDto: CreateAuthDto): Promise<TokenResponse> {
     try {
       const { email, password } = createAuthDto;
       if (typeof email !== 'string') {
