@@ -15,8 +15,10 @@ import { Transaction } from './entities/transaction.entity';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth/jwt-auth.guard';
 import { User } from '../users/entities/user.entity';
+import { ApiBody, ApiTags } from "@nestjs/swagger";
 
 @UseGuards(JwtAuthGuard)
+@ApiTags('transactions')
 @Controller('transactions')
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
@@ -25,6 +27,9 @@ export class TransactionsController {
   @UseInterceptors(ClassSerializerInterceptor)
   @SerializeOptions({
     type: User,
+  })
+  @ApiBody({
+    type: CreateTransactionDto,
   })
   async transferFunds(
     @Req() request: Request,
