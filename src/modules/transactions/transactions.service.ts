@@ -93,23 +93,107 @@ export class TransactionsService {
       await queryRunner.release();
     }
   }
-  create(createTransactionDto: CreateTransactionDto) {
-    return 'This action adds a new transaction';
-  }
+  async depositFunds(
+    request: Request,
+    depositDto: CreateTransactionDto,
+  ): Promise<{ transaction: Transaction; message: string }> {
+    const queryRunner = this.datasource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-  findAll() {
-    return `This action returns all transactions`;
-  }
+    try {
+      const { receiverAccountNumber, amount } = depositDto;
+      const user = request.user as User;
+      const existingUser = await this.userRepository.findOne({
+        where: { id: user.id },
+      });
+      if (!existingUser) {
+        throw new NotFoundException('User not found');
+      }
+      // Lock the receiver account with pessimistic write lock
+      const receiver = await queryRunner.manager.findOne(Account, {
+        where: { accountNumber: receiverAccountNumber },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!receiver) {
+        throw new NotFoundException('Receiver account not found');
+      }
+      // Ensure numeric conversion
+      const receiverBalance = Number(receiver.balance);
+      receiver.balance = receiverBalance + amount;
+      await queryRunner.manager.save(Account, receiver);
 
-  findOne(id: number) {
-    return `This action returns a #${id} transaction`;
+      const transaction = this.transactionRepository.create({
+        type: 'deposit',
+        amount: amount,
+        initiatedBy: existingUser,
+        receiverAccount: receiver,
+      });
+      await queryRunner.manager.save(Transaction, transaction);
+      await queryRunner.commitTransaction();
+      return { transaction, message: 'Deposit successful' };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      console.error('Error depositing funds to the user', error);
+      throw new InternalServerErrorException(
+        'An error occurred while depositing funds to the user. Please check server logs for details.',
+        error.message,
+      );
+    } finally {
+      await queryRunner.release();
+    }
   }
+  async withdrawFunds(
+    request: Request,
+    withdrawDto: CreateTransactionDto,
+  ): Promise<{ transaction: Transaction; message: string }> {
+    const queryRunner = this.datasource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-  update(id: number, updateTransactionDto: UpdateTransactionDto) {
-    return `This action updates a #${id} transaction`;
-  }
+    try {
+      const { senderAccountNumber, amount } = withdrawDto;
+      const user = request.user as User;
+      const existingUser = await this.userRepository.findOne({
+        where: { id: user.id },
+      });
+      if (!existingUser) {
+        throw new NotFoundException('User not found');
+      }
+      // Lock the sender account with pessimistic write lock
+      const sender = await queryRunner.manager.findOne(Account, {
+        where: { accountNumber: senderAccountNumber },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!sender) {
+        throw new NotFoundException('Sender account not found');
+      }
+      // Ensure numeric conversion
+      const senderBalance = Number(sender.balance);
+      if (senderBalance < amount) {
+        throw new BadRequestException('Insufficient funds');
+      }
+      sender.balance = senderBalance - amount;
+      await queryRunner.manager.save(Account, sender);
 
-  remove(id: number) {
-    return `This action removes a #${id} transaction`;
+      const transaction = this.transactionRepository.create({
+        type: 'withdrawal',
+        amount: amount,
+        initiatedBy: existingUser,
+        senderAccount: sender,
+      });
+      await queryRunner.manager.save(Transaction, transaction);
+      await queryRunner.commitTransaction();
+      return { transaction, message: 'Withdrawal successful' };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      console.error('Error withdrawing funds from the user', error);
+      throw new InternalServerErrorException(
+        'An error occurred while withdrawing funds from the user. Please check server logs for details.',
+        error.message,
+      );
+    } finally {
+      await queryRunner.release();
+    }
   }
 }

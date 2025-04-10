@@ -1,22 +1,25 @@
 import {
   Controller,
-  Get,
   Post,
   Body,
-  Patch,
-  Param,
-  Delete,
   Req,
   UseGuards,
+  UseInterceptors,
+  ClassSerializerInterceptor,
+  SerializeOptions,
 } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { Transaction } from './entities/transaction.entity';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth/jwt-auth.guard';
+import { User } from '../users/entities/user.entity';
 
 @UseGuards(JwtAuthGuard)
+@UseInterceptors(ClassSerializerInterceptor)
+@SerializeOptions({
+  type: User,
+})
 @Controller('transactions')
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
@@ -28,30 +31,20 @@ export class TransactionsController {
   ): Promise<{ transaction: Transaction; message: string }> {
     return await this.transactionsService.transferFunds(request, transferDto);
   }
-  create(@Body() createTransactionDto: CreateTransactionDto) {
-    return this.transactionsService.create(createTransactionDto);
+
+  @Post('deposit')
+  async depositFunds(
+    @Req() request: Request,
+    @Body() depositDto: CreateTransactionDto,
+  ): Promise<{ transaction: Transaction; message: string }> {
+    return await this.transactionsService.depositFunds(request, depositDto);
   }
 
-  @Get()
-  findAll() {
-    return this.transactionsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.transactionsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateTransactionDto: UpdateTransactionDto,
-  ) {
-    return this.transactionsService.update(+id, updateTransactionDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.transactionsService.remove(+id);
+  @Post('withdraw')
+  async withdrawFunds(
+    @Req() request: Request,
+    @Body() withdrawDto: CreateTransactionDto,
+  ): Promise<{ transaction: Transaction; message: string }> {
+    return await this.transactionsService.withdrawFunds(request, withdrawDto);
   }
 }
