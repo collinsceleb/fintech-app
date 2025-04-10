@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from '../strategies/jwt-strategy/jwt-strategy';
 import { UsersModule } from '../../modules/users/users.module';
+import { LocalStrategy } from "../strategies/local-strategy/local-strategy";
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { UsersModule } from '../../modules/users/users.module';
     UsersModule,
   ],
   controllers: [],
-  providers: [JwtStrategy],
-  exports: [PassportModule, JwtModule, JwtStrategy],
+  providers: [JwtStrategy, LocalStrategy],
+  exports: [PassportModule, JwtModule, JwtStrategy, LocalStrategy],
 })
 export class SharedModule {}

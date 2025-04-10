@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class JwtPayload {
   @ApiProperty({ example: '1' })
-  sub: User;
+  sub: string;
 
   @ApiProperty({ example: 'example@example.com' })
   email: string;

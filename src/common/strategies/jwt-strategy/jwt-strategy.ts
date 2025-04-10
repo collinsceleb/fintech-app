@@ -10,7 +10,7 @@ import { JwtPayload } from '../../class/jwt-payload/jwt-payload';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
-    private readonly configService: ConfigService,
+    configService: ConfigService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {
@@ -23,7 +23,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
   async validate(payload: { sub: string }) {
     const user = await this.userRepository.findOne({
-      where: { id: payload.sub } as unknown as JwtPayload,
+      where: { id: payload.sub },
     });
     if (!user) {
       throw new UnauthorizedException('User not found');

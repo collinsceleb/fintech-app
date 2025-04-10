@@ -2,7 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -10,6 +10,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../../users/entities/user.entity';
 import { Exclude } from 'class-transformer';
+import { Transaction } from '../../transactions/entities/transaction.entity';
 
 @Entity('accounts')
 export class Account {
@@ -31,6 +32,13 @@ export class Account {
   @Column({ name: 'account_number', unique: true })
   accountNumber: string;
 
+  @ApiProperty()
+  @OneToMany(() => Transaction, (transaction) => transaction.senderAccount)
+  sentTransactions: Transaction[];
+
+  @ApiProperty()
+  @OneToMany(() => Transaction, (transaction) => transaction.receiverAccount)
+  receivedTransactions: Transaction[];
   @ApiProperty({ example: '2023-05-01T00:00:00.000Z' })
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

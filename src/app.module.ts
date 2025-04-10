@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { SharedModule } from './common/shared/shared.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './modules/users/users.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
+import { SeedingService } from './common/seeding/seeding.service';
 
 @Module({
   imports: [
@@ -34,6 +35,11 @@ import { TransactionsModule } from './modules/transactions/transactions.module';
     TransactionsModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [SeedingService],
 })
-export class AppModule {}
+export class AppModule implements OnModuleInit {
+  constructor(private readonly seedingService: SeedingService) {}
+  async onModuleInit() {
+    await this.seedingService.Initialize();
+  }
+}

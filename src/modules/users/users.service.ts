@@ -26,7 +26,7 @@ export class UsersService {
     this.configService.get<number>('JWT_EXPIRATION_TIME') * 1000;
   private readonly JWT_ACCESS_EXPIRATION_TIME = this.configService.get<number>(
     'JWT_ACCESS_EXPIRATION_TIME',
-  );
+  ) * 1000;
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
@@ -108,19 +108,19 @@ export class UsersService {
     try {
       // const jwtId = crypto.randomUUID();
       const payload: JwtPayload = {
-        sub: user.id as unknown as User,
+        sub: user.id,
         email: user.email,
         jwtId: crypto.randomUUID(),
       };
       const accessToken = this.jwtService.sign(payload, {
-        expiresIn: this.JWT_ACCESS_EXPIRATION_TIME,
+        expiresIn: `${this.JWT_ACCESS_EXPIRATION_TIME}ms`,
       });
       const refreshTokenPayload = {
         ...payload,
         jwtId: crypto.randomUUID(),
       };
       const refreshToken = this.jwtService.sign(refreshTokenPayload, {
-        expiresIn: this.JWT_EXPIRATION_TIME,
+        expiresIn: `${this.JWT_EXPIRATION_TIME}ms`,
       });
       return {
         accessToken,
