@@ -196,4 +196,39 @@ export class TransactionsService {
       await queryRunner.release();
     }
   }
+
+  async getAccountBalance(request: Request) {
+    try {
+      const user = request.user as User;
+      const existingUser = await this.userRepository.findOne({
+        where: { id: user.id },
+      });
+      if (!existingUser) {
+        throw new NotFoundException('User not found');
+      }
+      return { balance: existingUser.account.balance };
+    } catch (e) {
+      throw new InternalServerErrorException(
+        'An error occurred while fetching account balance. Please check server logs for details.',
+        e.message,
+      );
+    }
+  }
+  async getTransactionHistory(request: Request) {
+    const user = request.user as User;
+    const existingUser = await this.userRepository.findOne({
+      where: { id: user.id },
+    });
+    if (!existingUser) {
+      throw new NotFoundException('User not found');
+    }
+    const transactions = await this.transactionRepository.find({
+      where: { initiatedBy: existingUser },
+      relations: ['senderAccount', 'receiverAccount'],
+    });
+    if (!transactions || transactions.length === 0) {
+      throw new NotFoundException('No transactions found for the user');
+    }
+    return transactions;
+  }
 }
